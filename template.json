@@ -1,0 +1,722 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "networkname": {
+            "type": "string"
+        },
+        "location": {
+            "type": "string"
+        },
+        "addressPrefix": {
+            "type": "string"
+        },
+        "subnetName1": {
+            "type": "string"
+        },
+        "subnetAddressPrefix1": {
+            "type": "string"
+        }, 
+		"subnetName2": {
+            "type": "string"
+        },
+        "subnetAddressPrefix2": {
+            "type": "string"
+        },
+		"nsg1":{
+			"type": "string"
+		},
+		"nsg2":{
+			"type": "string"
+		},
+		"avset1": {
+			"type": "string"
+		},
+		"avset2": {
+			"type": "string"
+		},
+		"publicIpAddressName1": {
+			"type": "string"
+		},
+		"publicIpAddressName2": {
+			"type": "string"
+		},
+		"networkInterfaceName1":{
+			"type": "string"
+		},
+		"networkInterfaceName2":{
+			"type": "string"
+		},
+		"networkInterfaceName3":{
+			"type": "string"
+		},
+		"networkInterfaceName4":{
+			"type": "string"
+		},
+		"storageAccountName1":{
+			"type": "string"
+		},
+		"storageAccountName2":{
+			"type": "string"
+		},
+		"storageAccountName3":{
+			"type": "string"
+		},
+		"storageAccountName4":{
+			"type": "string"
+		},
+		"virtualMachineName1":{
+			"type": "string"
+		},	
+		"virtualMachineName2":{
+			"type": "string"
+		},
+		"virtualMachineName3":{
+			"type": "string"
+		},
+		"virtualMachineName4":{
+			"type": "string"
+		},
+		"adminUsername": {
+            "type": "string"
+        },
+		"adminPassword": {
+            "type": "securestring"
+        }
+    },
+    "variables": {
+        "vnetId": "[resourceId('nhtttwork','Microsoft.Network/virtualNetworks', parameters('networkname'))]",
+        "subnetRef1": "[concat(variables('vnetId'), '/subnets/', parameters('subnetName1'))]",
+        "subnetRef2": "[concat(variables('vnetId'), '/subnets/', parameters('subnetName2'))]"
+    },     
+    "resources": [
+        //vms and ext. 
+        {
+            "name": "[parameters('virtualMachineName4')]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2016-04-30-preview",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkInterfaces/', parameters('networkInterfaceName4'))]",
+                "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountName4'))]"
+            ],
+            "properties": {
+                "osProfile": {
+                    "computerName": "[parameters('virtualMachineName4')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPassword')]",
+                    "windowsConfiguration": {
+                        "provisionVmAgent": "true"
+                    }
+                },
+                "hardwareProfile": {
+                    "vmSize": "Standard_D1_v2"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "MicrosoftSQLServer",
+                        "offer": "SQL2016SP1-WS2016",
+                        "sku": "Enterprise",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "createOption": "FromImage",
+                        "vhd": {
+                            "uri": "[concat(concat(reference(resourceId('nhtttwork', 'Microsoft.Storage/storageAccounts', parameters('storageAccountName4')), '2015-06-15').primaryEndpoints['blob'], 'vhds/'), parameters('virtualMachineName4'), '20170612110156.vhd')]"
+                        },
+                        "name": "[parameters('virtualMachineName4')]"
+                    },
+                    "dataDisks": [
+                        {
+                            "createOption": "Empty",
+                            "lun": 0,
+                            "diskSizeGB": "1023",
+                            "caching": "ReadOnly",
+                            "name": "[concat(parameters('virtualMachineName4'), '-disk-1')]",
+                            "vhd": {
+                                "uri": "[concat(concat(reference(resourceId('nhtttwork', 'Microsoft.Storage/storageAccounts', parameters('storageAccountName4')), '2015-06-15').primaryEndpoints['blob'], 'vhds/'), parameters('virtualMachineName4'), '-disk-1-20170612110156', '.vhd')]"
+                            }
+                        }
+                    ]
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaceName4'))]"
+                        }
+                    ]
+                },
+                "availabilitySet": {
+                    "id": "[resourceId('Microsoft.Compute/availabilitySets', parameters('avset2'))]"
+                }
+            }
+        },
+        {
+            "apiVersion": "2015-06-15",
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "name": "[concat(parameters('virtualMachineName4'), '/SqlIaasExtension')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Compute/virtualMachines/', parameters('virtualMachineName4'))]",
+                "[concat('Microsoft.Compute/virtualMachines/', parameters('virtualMachineName4'))]"
+            ],
+            "properties": {
+                "type": "SqlIaaSAgent",
+                "publisher": "Microsoft.SqlServer.Management",
+                "typeHandlerVersion": "1.2",
+                "autoUpgradeMinorVersion": "true",
+                "settings": {
+                    "AutoTelemetrySettings": {
+                        "Region": "[parameters('location')]"
+                    },
+                    "AutoPatchingSettings": {
+                        "PatchCategory": "WindowsMandatoryUpdates",
+                        "Enable": true,
+                        "DayOfWeek": "Sunday",
+                        "MaintenanceWindowStartingHour": 2,
+                        "MaintenanceWindowDuration": 60
+                    },
+                    "KeyVaultCredentialSettings": {
+                        "Enable": false,
+                        "CredentialName": ""
+                    },
+                    "ServerConfigurationsManagementSettings": {
+                        "SQLConnectivityUpdateSettings": {
+                            "ConnectivityType": "Private",
+                            "Port": 1433
+                        },
+                        "SQLWorkloadTypeUpdateSettings": {
+                            "SQLWorkloadType": "GENERAL"
+                        },
+                        "SQLStorageUpdateSettings": {
+                            "DiskCount": 1,
+                            "NumberOfColumns": 1,
+                            "StartingDeviceID": 2,
+                            "DiskConfigurationType": "NEW"
+                        },
+                        "AdditionalFeaturesServerConfigurations": {
+                            "IsRServicesEnabled": "false"
+                        }
+                    }
+                },
+                "protectedSettings": {}
+            }
+        },
+        {
+            "name": "[parameters('virtualMachineName3')]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2016-04-30-preview",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkInterfaces/', parameters('networkInterfaceName3'))]",
+                "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountName3'))]"
+            ],
+            "properties": {
+                "osProfile": {
+                    "computerName": "[parameters('virtualMachineName3')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPassword')]",
+                    "windowsConfiguration": {
+                        "provisionVmAgent": "true"
+                    }
+                },
+                "hardwareProfile": {
+                    "vmSize": "Standard_D1_v2"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "MicrosoftSQLServer",
+                        "offer": "SQL2016SP1-WS2016",
+                        "sku": "Enterprise",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "createOption": "FromImage",
+                        "vhd": {
+                            "uri": "[concat(concat(reference(resourceId('nhtttwork', 'Microsoft.Storage/storageAccounts', parameters('storageAccountName3')), '2015-06-15').primaryEndpoints['blob'], 'vhds/'), parameters('virtualMachineName3'), '20170612110156.vhd')]"
+                        },
+                        "name": "[parameters('virtualMachineName3')]"
+                    },
+                    "dataDisks": [
+                        {
+                            "createOption": "Empty",
+                            "lun": 0,
+                            "diskSizeGB": "1023",
+                            "caching": "ReadOnly",
+                            "name": "[concat(parameters('virtualMachineName3'), '-disk-1')]",
+                            "vhd": {
+                                "uri": "[concat(concat(reference(resourceId('nhtttwork', 'Microsoft.Storage/storageAccounts', parameters('storageAccountName3')), '2015-06-15').primaryEndpoints['blob'], 'vhds/'), parameters('virtualMachineName3'), '-disk-1-20170612110156', '.vhd')]"
+                            }
+                        }
+                    ]
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaceName3'))]"
+                        }
+                    ]
+                },
+                "availabilitySet": {
+                    "id": "[resourceId('Microsoft.Compute/availabilitySets', parameters('avset2'))]"
+                }
+            }
+        },
+        {
+            "apiVersion": "2015-06-15",
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "name": "[concat(parameters('virtualMachineName3'), '/SqlIaasExtension')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Compute/virtualMachines/', parameters('virtualMachineName3'))]",
+                "[concat('Microsoft.Compute/virtualMachines/', parameters('virtualMachineName3'))]"
+            ],
+            "properties": {
+                "type": "SqlIaaSAgent",
+                "publisher": "Microsoft.SqlServer.Management",
+                "typeHandlerVersion": "1.2",
+                "autoUpgradeMinorVersion": "true",
+                "settings": {
+                    "AutoTelemetrySettings": {
+                        "Region": "[parameters('location')]"
+                    },
+                    "AutoPatchingSettings": {
+                        "PatchCategory": "WindowsMandatoryUpdates",
+                        "Enable": true,
+                        "DayOfWeek": "Sunday",
+                        "MaintenanceWindowStartingHour": 2,
+                        "MaintenanceWindowDuration": 60
+                    },
+                    "KeyVaultCredentialSettings": {
+                        "Enable": false,
+                        "CredentialName": ""
+                    },
+                    "ServerConfigurationsManagementSettings": {
+                        "SQLConnectivityUpdateSettings": {
+                            "ConnectivityType": "Private",
+                            "Port": 1433
+                        },
+                        "SQLWorkloadTypeUpdateSettings": {
+                            "SQLWorkloadType": "GENERAL"
+                        },
+                        "SQLStorageUpdateSettings": {
+                            "DiskCount": 1,
+                            "NumberOfColumns": 1,
+                            "StartingDeviceID": 2,
+                            "DiskConfigurationType": "NEW"
+                        },
+                        "AdditionalFeaturesServerConfigurations": {
+                            "IsRServicesEnabled": "false"
+                        }
+                    }
+                },
+                "protectedSettings": {}
+            }
+        },
+		{
+            "name": "[parameters('virtualMachineName1')]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2016-04-30-preview",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkInterfaces/', parameters('networkInterfaceName1'))]",
+                "[concat('Microsoft.Compute/availabilitySets/', parameters('avset1'))]",
+                "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountName1'))]"
+            ],
+            "properties": {
+                "osProfile": {
+                    "computerName": "[parameters('virtualMachineName1')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPassword')]",
+                    "windowsConfiguration": {
+                        "provisionVmAgent": "true"
+                    }
+                },
+                "hardwareProfile": {
+                    "vmSize": "Standard_D1_v2"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "MicrosoftWindowsServer",
+                        "offer": "WindowsServer",
+                        "sku": "2016-Datacenter",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "createOption": "FromImage",
+                        "vhd": {
+                            "uri": "[concat(concat(reference(resourceId('nhtttwork', 'Microsoft.Storage/storageAccounts', parameters('storageAccountName1')), '2015-06-15').primaryEndpoints['blob'], 'vhds/'), parameters('virtualMachineName1'), '20170609161953.vhd')]"
+                        },
+                        "name": "[parameters('virtualMachineName1')]"
+                    },
+                    "dataDisks": []
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaceName1'))]"
+                        }
+                    ]
+                },
+                "availabilitySet": {
+                    "id": "[resourceId('Microsoft.Compute/availabilitySets', parameters('avset1'))]"
+                }
+            }
+        },
+		{
+            "name": "[parameters('virtualMachineName2')]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2016-04-30-preview",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkInterfaces/', parameters('networkInterfaceName2'))]",
+                "[concat('Microsoft.Compute/availabilitySets/', parameters('avset1'))]",
+                "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountName2'))]"
+            ],
+            "properties": {
+                "osProfile": {
+                    "computerName": "[parameters('virtualMachineName2')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPassword')]",
+                    "windowsConfiguration": {
+                        "provisionVmAgent": "true"
+                    }
+                },
+                "hardwareProfile": {
+                    "vmSize": "Standard_D1_v2"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "MicrosoftWindowsServer",
+                        "offer": "WindowsServer",
+                        "sku": "2016-Datacenter",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "createOption": "FromImage",
+                        "vhd": {
+                            "uri": "[concat(concat(reference(resourceId('nhtttwork', 'Microsoft.Storage/storageAccounts', parameters('storageAccountName2')), '2015-06-15').primaryEndpoints['blob'], 'vhds/'), parameters('virtualMachineName2'), '20170609161953.vhd')]"
+                        },
+                        "name": "[parameters('virtualMachineName2')]"
+                    },
+                    "dataDisks": []
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaceName2'))]"
+                        }
+                    ]
+                },
+                "availabilitySet": {
+                    "id": "[resourceId('Microsoft.Compute/availabilitySets', parameters('avset1'))]"
+                }
+            }
+        },
+        //storage accounts
+		{
+            "name": "[parameters('storageAccountName1')]",
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2015-06-15",
+            "location": "[parameters('location')]",
+            "properties": {
+                "accountType": "Standard_LRS"
+            }
+        },
+		{
+            "name": "[parameters('storageAccountName2')]",
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2015-06-15",
+            "location": "[parameters('location')]",
+            "properties": {
+                "accountType": "Standard_LRS"
+            }
+        },
+        	{
+            "name": "[parameters('storageAccountName3')]",
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2015-06-15",
+            "location": "[parameters('location')]",
+            "properties": {
+                "accountType": "Standard_LRS"
+            }
+        },
+        	{
+            "name": "[parameters('storageAccountName4')]",
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2015-06-15",
+            "location": "[parameters('location')]",
+            "properties": {
+                "accountType": "Standard_LRS"
+            }
+        },
+        //network interface
+		{
+            "name": "[parameters('networkInterfaceName1')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2016-09-01",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('networkname'))]",
+                "[concat('Microsoft.Network/publicIpAddresses/', parameters('publicIpAddressName1'))]",
+                "[concat('Microsoft.Network/networkSecurityGroups/', parameters('nsg1'))]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "subnet": {
+                                "id": "[variables('subnetRef1')]"
+                            },
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIpAddress": {
+                                "id": "[resourceId('nhtttwork','Microsoft.Network/publicIpAddresses', parameters('publicIpAddressName1'))]"
+                            }
+                        }
+                    }
+                ],
+                "networkSecurityGroup": {
+                    "id": "[resourceId('nhtttwork', 'Microsoft.Network/networkSecurityGroups', parameters('nsg1'))]"
+                }
+            }
+        },
+		{
+            "name": "[parameters('networkInterfaceName3')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2016-09-01",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('networkname'))]",                
+                "[concat('Microsoft.Network/networkSecurityGroups/', parameters('nsg2'))]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "subnet": {
+                                "id": "[variables('subnetRef2')]"
+                            },
+                            "privateIPAllocationMethod": "Dynamic"
+                        }
+                    }
+                ],
+                "networkSecurityGroup": {
+                    "id": "[resourceId('nhtttwork', 'Microsoft.Network/networkSecurityGroups', parameters('nsg2'))]"
+                }
+            }
+        },
+        {
+            "name": "[parameters('networkInterfaceName4')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2016-09-01",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('networkname'))]",                
+                "[concat('Microsoft.Network/networkSecurityGroups/', parameters('nsg1'))]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "subnet": {
+                                "id": "[variables('subnetRef2')]"
+                            },
+                            "privateIPAllocationMethod": "Dynamic"
+                        }
+                    }
+                ],
+                "networkSecurityGroup": {
+                    "id": "[resourceId('nhtttwork', 'Microsoft.Network/networkSecurityGroups', parameters('nsg2'))]"
+                }
+            }
+        },		
+        {
+            "name": "[parameters('networkInterfaceName2')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2016-09-01",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('networkname'))]",
+                "[concat('Microsoft.Network/publicIpAddresses/', parameters('publicIpAddressName2'))]",
+                "[concat('Microsoft.Network/networkSecurityGroups/', parameters('nsg1'))]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "subnet": {
+                                "id": "[variables('subnetRef1')]"
+                            },
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIpAddress": {
+                                "id": "[resourceId('nhtttwork','Microsoft.Network/publicIpAddresses', parameters('publicIpAddressName2'))]"
+                            }
+                        }
+                    }
+                ],
+                "networkSecurityGroup": {
+                    "id": "[resourceId('nhtttwork', 'Microsoft.Network/networkSecurityGroups', parameters('nsg1'))]"
+                }
+            }
+        },
+        //public ip			
+		{
+            "name": "[parameters('publicIpAddressName1')]",
+            "type": "Microsoft.Network/publicIpAddresses",
+            "apiVersion": "2016-09-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "publicIpAllocationMethod": "Dynamic"
+            }
+        },
+		{
+            "name": "[parameters('publicIpAddressName2')]",
+            "type": "Microsoft.Network/publicIpAddresses",
+            "apiVersion": "2016-09-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "publicIpAllocationMethod": "Dynamic"
+            }
+        },
+        //availability sets
+		{
+		  "type": "Microsoft.Compute/availabilitySets",
+		  "name": "[parameters('avset1')]",
+		  "apiVersion": "2015-06-15",
+		  "location": "[parameters('location')]",
+		  "properties": {
+			"platformFaultDomainCount": 2,
+			"platformUpdateDomainCount": 5
+		  }
+		},
+		{
+		  "type": "Microsoft.Compute/availabilitySets",
+		  "name": "[parameters('avset2')]",
+		  "apiVersion": "2015-06-15",
+		  "location": "[parameters('location')]",
+		  "properties": {
+			"platformFaultDomainCount": 2,
+			"platformUpdateDomainCount": 5
+		  }
+		},
+        //security groups
+		{
+            "apiVersion": "2015-06-15",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "name": "[parameters('nsg1')]",
+            "location": "[parameters('location')]",
+            "properties": {
+				"securityRules": [
+					  {
+						"name": "rdp_rule",
+						"properties": {
+						  "description": "Allow RDP",
+						  "protocol": "Tcp",
+						  "sourcePortRange": "*",
+						  "destinationPortRange": "3389",
+						  "sourceAddressPrefix": "Internet",
+						  "destinationAddressPrefix": "*",
+						  "access": "Allow",
+						  "priority": 100,
+						  "direction": "Inbound"
+						}
+					  },
+					  {
+						"name": "web_rule",
+						"properties": {
+						  "description": "Allow WEB",
+						  "protocol": "Tcp",
+						  "sourcePortRange": "*",
+						  "destinationPortRange": "80",
+						  "sourceAddressPrefix": "Internet",
+						  "destinationAddressPrefix": "*",
+						  "access": "Allow",
+						  "priority": 101,
+						  "direction": "Inbound"
+						}
+					  }
+				  ]
+			}
+		},
+		{
+            "apiVersion": "2015-06-15",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "name": "[parameters('nsg2')]",
+            "location": "[parameters('location')]",
+            "properties": {
+			"securityRules": [
+				  {
+					"name": "rdp_rule",
+					"properties": {
+					  "description": "Allow RDP",
+					  "protocol": "Tcp",
+					  "sourcePortRange": "*",
+					  "destinationPortRange": "3389",
+					  "sourceAddressPrefix": "[parameters('addressPrefix')]",
+					  "destinationAddressPrefix": "*",
+					  "access": "Allow",
+					  "priority": 100,
+					  "direction": "Inbound"
+					}
+				  },
+				  {
+					"name": "sql_rule",
+					"properties": {
+					  "description": "Allow SQL",
+					  "protocol": "Tcp",
+					  "sourcePortRange": "*",
+					  "destinationPortRange": "1433",
+					  "sourceAddressPrefix": "[parameters('addressPrefix')]",
+					  "destinationAddressPrefix": "*",
+					  "access": "Allow",
+					  "priority": 101,
+					  "direction": "Inbound"
+					}
+				  }
+			  ]
+			}
+		},
+        //network
+        {
+            "apiVersion": "2016-06-01",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[parameters('networkname')]",
+            "location": "[parameters('location')]",
+			"dependsOn": [
+				"[concat('Microsoft.Network/networkSecurityGroups/', parameters('nsg1'))]",
+				"[concat('Microsoft.Network/networkSecurityGroups/', parameters('nsg2'))]"
+		    ],
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[parameters('addressPrefix')]"
+                    ]
+                },				
+                "subnets": [
+                    {
+                        "name": "[parameters('subnetName1')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('subnetAddressPrefix1')]",
+							"networkSecurityGroup": {
+								"id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsg1'))]"
+							}
+                        }
+                    },
+					{
+                        "name": "[parameters('subnetName2')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('subnetAddressPrefix2')]",
+							"networkSecurityGroup": {
+								"id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsg2'))]"
+							}
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}

@@ -1,0 +1,87 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "value": "westeurope"
+        },
+        "networkname": {
+            "value": "vnet_rihanna"
+        },
+        "addressPrefix": {
+            "value": "10.0.0.0/16"
+        },
+        "subnetName1": {
+            "value": "dmz"
+        },
+        "subnetAddressPrefix1": {
+            "value": "10.0.0.0/24"
+        },
+        "subnetName2": {
+            "value": "internal"
+        },
+        "subnetAddressPrefix2": {
+            "value": "10.0.1.0/24"
+        },
+		"nsg1": {
+			"value": "dmz-nsg"
+		},
+		"nsg2": {
+			"value": "internal-nsg"
+		},
+		"avset1": {
+			"value": "web-ha"
+		},
+		"avset2": {
+			"value": "sql-ha"
+		},
+		"publicIpAddressName1": {
+			"value": "nhpubip1"
+		},
+		"publicIpAddressName2": {
+			"value": "nhpubip2"
+		},
+		"networkInterfaceName1": {
+			"value": "networkcard-web01"
+		},
+		"networkInterfaceName2": {
+			"value": "networkcard-web02"
+		},
+		"networkInterfaceName3": {
+			"value": "networkcard-sql01"
+		},
+		"networkInterfaceName4": {
+			"value": "networkcard-sql02"
+		},
+		"storageAccountName1": {
+			"value": "web01strg"
+		},
+		"storageAccountName2": {
+			"value": "web02strg"
+		},
+		"storageAccountName3": {
+			"value": "sql01strg"
+		},
+		"storageAccountName4": {
+			"value": "sql02strg"
+		},
+		"virtualMachineName1": {
+			"value": "web01"
+		},	
+		"virtualMachineName2": {
+			"value": "web02"
+		},
+		"virtualMachineName3": {
+			"value": "sql01"
+		},
+		"virtualMachineName4": {
+			"value": "sql02"
+		},
+		"adminUsername": {
+            "value": "nhadmin"
+        },
+        "adminPassword": {
+            "value": "Pa$$W0rd1234"
+        }
+	}
+}
